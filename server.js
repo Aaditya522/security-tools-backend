@@ -1,10 +1,10 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import session from "express-session";
-import MongoStore from "connect-mongo";
 import mongoose from "mongoose";
+import dotenv from "dotenv";
 
+// Routes
 import authRoutes from "./routes/authRoutes.js";
 import fileIntegrityRoutes from "./routes/fileIntegrityRoutes.js";
 import passwordRoutes from "./routes/passwordRoutes.js";
@@ -12,56 +12,56 @@ import keyloggerRoutes from "./routes/keyloggerRoutes.js";
 import phishingScannerRouter from "./routes/phishingScanner.js";
 import portScannerRoutes from "./routes/portScannerRoutes.js";
 
-import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 5000;
 
-// app.use(cors());
+// Middleware
+
 app.use(cors({
-    origin: "http://localhost:3000",
-    credentials: true
+  origin: "http://localhost:3000",
+  credentials: true
 }));
 
 app.use(express.json());
 app.use(cookieParser());
 
-// MongoDB connect
-mongoose.connect(process.env.MONGO_URI);
+// MongoDB Connection
 
-// Sessions
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB Connected"))
+  .catch((err) => {
+    console.error("MongoDB Connection Error:", err.message);
+    process.exit(1);
+  });
 
-const sessionMiddleware = session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
-  cookie: {
-    secure: false,
-    httpOnly: true,
-    maxAge: 1000 * 60 * 60 * 24,
-  }
+
+// Health check
+app.get("/", (req, res) => {
+  res.send("Security Tools Backend Running");
 });
 
-app.use(sessionMiddleware);
-
-
-// Root test route
-app.get("/", (req, res) => res.send("Server is running."));
-
-// Auth routes
+// Auth
 app.use("/api/auth", authRoutes);
 
-// Rest Routes
-app.use("/api/file-integrity",fileIntegrityRoutes);
+// Other Tools
+app.use("/api/file-integrity", fileIntegrityRoutes);
 app.use("/api/password", passwordRoutes);
 app.use("/api/keylogger-check", keyloggerRoutes);
 app.use("/api", phishingScannerRouter);
 app.use("/api/port-scan", portScannerRoutes);
 
 
-app.listen(5000, "0.0.0.0", () => {
-  console.log("Server running on http://localhost:5000");
+app.use((err, req, res, next) => {
+  console.error("Unhandled Error:", err.stack);
+  res.status(500).json({ error: "Internal Server Error" });
 });
 
-// app.listen(5000,'0.0.0.0', () => console.log("Server running on http://localhost:5000"));
+// ======================
+// Start Server
+// ======================
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
