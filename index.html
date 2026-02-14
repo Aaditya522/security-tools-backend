@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>header tag</h1>
+    <p>para tag</p>
+</body>
+<script>
+    async function fetch(){
+        try{
+            let res = await fetch('/', {
+                method: 'POST'
+            });
+            let data = await res.text();
+        }
+        catch(e){
+            console.log("error: ",e);
+        }
+    }
+
+    fetch();
+</script>
+</html>
